@@ -6,19 +6,34 @@ import Navbar from "./Navbar.js";
 function SearchResult() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { query, results = [], totalResults = 0, ErrorStatus = "" } = state || {};
+  const { query } = state || {};
 
-  const [games, setGames] = useState(results);
+  const [games, setGames] = useState([]);
+  const [totalResults, setTotalResults] = useState(0);
+  const [errorStatus, setErrorStatus] = useState(null);
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!query) return;
 
     const fetchGames = async () => {
-      const offset = (page - 1) * itemsPerPage;
-      const data = await ApiCalls.searchGames(query, offset, itemsPerPage);
-      setGames(data.results);
+      try {
+        setLoading(true);
+        const offset = (page - 1) * itemsPerPage;
+        const data = await ApiCalls.searchGames(query, offset, itemsPerPage);
+
+        if (data.ErrorStatus) {
+          setErrorStatus(data.ErrorStatus);
+        } else {
+          setGames(data.results);
+          setTotalResults(data.total_results);
+          setErrorStatus(null);
+        }
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchGames();
@@ -26,7 +41,8 @@ function SearchResult() {
 
   const totalPages = Math.ceil(totalResults / itemsPerPage);
 
-  if (ErrorStatus === 402) {
+  // Handle errors
+  if (errorStatus === 402) {
     return (
       <div className="empty">
         <Navbar />
@@ -39,7 +55,34 @@ function SearchResult() {
       </div>
     );
   }
-  
+
+  if (errorStatus === 500) {
+    return (
+      <div className="empty">
+        <Navbar />
+        <div className="container mt-4">
+          <h2>Server error. Please try again later.</h2>
+          <button className="btn btn-primary" onClick={() => navigate("/home")}>
+            Go Back Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading
+  if (loading) {
+    return (
+      <div>
+        <Navbar />
+        <div className="container mt-4">
+          <h2>Loading results...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // No results
   if (!games || games.length === 0) {
     return (
       <div className="empty">
@@ -54,6 +97,7 @@ function SearchResult() {
     );
   }
 
+  // Results UI
   return (
     <>
       <Navbar />

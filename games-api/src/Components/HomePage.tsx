@@ -1,26 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import ApiCalls from "../ApiCalls/api.js";
 
 function HomePage() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
 
-  const onSearch = async (e) => {
+  const onSearch = (e) => {
     e.preventDefault();
     if (!query.trim()) return;
 
-    const games = await ApiCalls.searchGames(query, 0, 10);
-
-    // navigate with state
-    navigate("/search", {
-      state: {
-        query,
-        results: games.results,
-        totalResults: games.total_results,
-        ErrorStatus: games.ErrorStatus,
-      },
-    });
+    // Navigate with only the query
+    navigate("/search", { state: { query } });
   };
 
   return (
